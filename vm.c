@@ -121,7 +121,8 @@ void clearaccessbit(pde_t *pgdir)
   return;
 }
 
-pte_t *swap_page_out(pde_t *page_dir){
+//pte_t *swap_page_out(pde_t *page_dir){
+void swap_page_out(pde_t *page_dir){
   cprintf("Swapping Out!\n");
   pte_t *pte = swap_policy(page_dir);
   if (*pte == 0){
@@ -131,7 +132,7 @@ pte_t *swap_page_out(pde_t *page_dir){
   cprintf("Swapped out pte value : %d\n",*pte);
   //cprintf("Before - %d\n",*pte & PTE_P);
   uint b_page = balloc_page(ROOTDEV);
-  cprintf("Swap out block = %d",b_page);
+  cprintf("Swap out block = %d\n",b_page);
   char page_buffer[PGSIZE] = "";
   uint phys_addr = PTE_ADDR(*pte);
   memmove(page_buffer, (char*)P2V(phys_addr),PGSIZE);
@@ -145,16 +146,16 @@ pte_t *swap_page_out(pde_t *page_dir){
     brelse(buffer);
     end_op();
   }
-  cprintf("\nBef- %d\n",*pte & PTE_PS);
+  //cprintf("\nBef- %d\n",*pte & PTE_PS);
   b_page = b_page << 12;
   *pte = b_page|PTE_PS;
   
   asm volatile ( "invlpg (%0)" : : "b"((unsigned long)(P2V(phys_addr))) : "memory" );
-  cprintf("Af - %d\n",*pte & PTE_PS);
-  //kfree(P2V(phys_addr));
+  //cprintf("Af - %d\n",*pte & PTE_PS);
+  kfree(P2V(phys_addr));
 
-  cprintf("exiting swap\n");
-  return pte;
+  //cprintf("exiting swap\n");
+  //return pte;
   //cprintf("Swapping Done");
   //return phys_addr;
 
@@ -171,7 +172,7 @@ read_page_from_disk(uint dev, char *pg, uint blk)
     //cprintf("hiiiii\n");
     brelse(b);
   }
-  cprintf("read complete\n");
+  //cprintf("read complete\n");
 }
 
 
@@ -554,9 +555,11 @@ void page_fault_handler(){
     kva = kalloc();
     if(kva==0)  
     {
-      pte_t *pte_new = swap_page_out(page_dir);
-      uint phys_addr = PTE_ADDR(*pte_new);
-      kva = P2V(phys_addr);
+      //pte_t *pte_new = 
+      swap_page_out(page_dir);
+      //uint phys_addr = PTE_ADDR(*pte_new);
+      //kva = P2V(phys_addr);
+      kva = kalloc();
       if(kva == 0)
         panic("PROBLEM"); 
       memmove(kva , buffer, PGSIZE);
@@ -577,15 +580,17 @@ void page_fault_handler(){
     kva = kalloc();
     if(kva==0)  
     {
-      pte_t *pte_new = swap_page_out(page_dir);
-      uint phys_addr = PTE_ADDR(*pte_new);
-      cprintf("real pte value : %d\n",phys_addr);
-      kva = P2V(phys_addr);
+      //pte_t *pte_new = 
+      swap_page_out(page_dir);
+      //uint phys_addr = PTE_ADDR(*pte_new);
+      //cprintf("real pte value : %d\n",phys_addr);
+      //kva = P2V(phys_addr);
+      kva = kalloc();
       if(kva == 0)
         panic("PROBLEM"); 
       memset(kva,0,PGSIZE);
       *pte =  V2P(kva) | PTE_P | PTE_W | PTE_U ;
-      cprintf("pte value : %d\n",*pte_new);
+      //cprintf("pte value : %d\n",*pte_new);
       cprintf("New entry set\n");
       cprintf("---------------------------------------\n");
     }

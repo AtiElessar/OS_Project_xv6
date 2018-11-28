@@ -72,7 +72,7 @@ malloc(uint nbytes)
     base.s.size = 0;
   }
   for(p = prevp->s.ptr; ; prevp = p, p = p->s.ptr){
-    printf(1,"djshfuiwhfuiewhgiuerhguirhguerhgiuehguierhgurieghrueighreui\n");
+    //printf(1,"djshfuiwhfuiewhgiuerhguirhguerhgiuehguierhgurieghrueighreui\n");
     if(p->s.size >= nunits){
       if(p->s.size == nunits)
         prevp->s.ptr = p->s.ptr;
